@@ -5,29 +5,43 @@ from datetime import datetime
 
 stickers = [
     'Titan Katowice 2015',
+    "Titan Cologne 2014",
     "Cloud9 G2A Katowice 2015",
     "Natus Vincere Katowice 2015",
     "HellRaisers Katowice 2015",
+    "HellRaisers Atlanta 2017",
     "Vox Eminor Katowice 2015",
+    "Vox Eminor Cologne 2014",
     "LGB eSports Katowice 2015",
     "3DMAX Katowice 2015",
     "Flipsid3 Tactics Katowice 2015",
     "Flipsid3 Tactics MLG Columbus 2016",
-    "Luminosity Gaming holo MLG Columbus 2016",
-    "Flipsid3 Tactics holo MLG Columbus 2016",
-    "Team Liquid holo MLG Columbus 2016",
-    "Vox Eminor Cologne 2014",
-    "iBUYPOWER Cologne 2014",
-    "Titan Cologne 2014",
-    "100 Thieves Boston 2018",
     "Flipsid3 Tactics holo Cologne 2016",
+    "Flipsid3 Tactics Krakow 2017",
+    "Flipsid3 Tactics Atlanta 2017" ,
+    "Flipsid3 Tactics holo MLG Columbus 2016",
+    "Luminosity Gaming Cologne 2015",
+    "Luminosity Gaming holo MLG Columbus 2016",
+    "Luminosity Gaming MLG Columbus 2016",
+    "Team Liquid holo MLG Columbus 2016",
+    "Team Liquid Atlanta 2017",
+    "Team Liquid Boston 2018",
+    "iBUYPOWER Cologne 2014",
+    "100 Thieves Boston 2018",
     "FaZe Clan holo Cologne 2016",
+    "SK Gaming Cologne 2016",
     "SK Gaming holo Cologne 2016",
+    "SK Gaming Krakow 2017",
+    "SK Gaming Boston 2018",
+    "SK Gaming Atlanta 2017",
+    "Astralis Atlanta 2017",
     "Battle Scarred holo",
     "Lambda holo",
-    "Team Liquid Atlanta 2017",
-    "HellRaisers Atlanta 2017",
     ]
+
+items_to_ignore = ['Sealed Graffiti', 'Sticker Capsule']
+
+cookies = {'cookie':'insert the cookies here'}
 
 def skin_price(skin_name):
     user_agent_rotator = UserAgent()
@@ -44,7 +58,6 @@ def skin_price(skin_name):
 
 def sticker_search(sticker_name):
     payload = {'query':f'"{sticker_name}"', 'start':'0', 'count':'15', 'search_descriptions':'1', 'sort_column':'price', 'sort_dir':'asc', 'appid':'730', 'norender':'1', 'currency':'7'}
-    cookies = {'cookie':'ActListPageSize=100; timezoneOffset=-10800,0; _ga=GA1.2.535929133.1603673925; Steam_Language=english; browserid=2371685853297177240; steamMachineAuth76561198080126414=3976CD0E0052D96FDE6ADC15C591862E0FA94496; rgDiscussionPrefs={"cTopicRepliesPerPage":50}; steamCurrencyId=7; recentlyVisitedAppHubs=438740,12210,447500,433850,892970,985810,1213740,252950,731490,895400,1271700,1623660,730,1549180,846770,1284210,413150,108600,1403370,1591520; steamRememberLogin=76561198837076030||22bcdb33cb3368ca74501a04f4bc953f; steamMachineAuth76561198837076030=9BB6F9755C39E717F546A4375525C34E4CFF0209; _gid=GA1.2.759725383.1646319405; strInventoryLastContext=730_2; sessionid=6ec85ce666f39e835b4585c9; webTradeEligibility={"allowed":1,"allowed_at_time":0,"steamguard_required_days":15,"new_device_cooldown_days":7,"time_checked":1646619868}; steamLoginSecure=76561198837076030||F01AB5FF73348E3442E6086D32B05A99D6649CD4; steamCountry=BR|a09c01f022e5408e0f3428576974a68c; rgTopicView_General_4009259_1={"620703493331692216":1646664966,"616188473088925567":1646665003}; tsTradeOffersLastRead=1641085466'}
     response = requests.get('https://steamcommunity.com/market/search/render/?', payload, cookies=cookies)
     if response.json() == None:
         print('Cooldown... 10s')
@@ -56,6 +69,9 @@ def sticker_search(sticker_name):
 def handle_item(item, sticker, updated):
     file_data = open_skin_prices()
     skin_name = item['name']
+    for item_ignore in items_to_ignore:
+        if item_ignore in skin_name:
+            return
     announced_price = float(item['sell_price_text'].replace('R$ ', '').replace(',', '.'))
     if announced_price <= 20:
         skin_price_file = check_skin(skin_name)
@@ -68,7 +84,7 @@ def handle_item(item, sticker, updated):
                         skin_price_now = float(item_file['median_price'].replace('R$ ', '').replace(',', '.'))
                     difference = compare_prices(skin_price_now, announced_price)
                     if difference <= 40:
-                        print(f'{skin_name} current price: R${skin_price_now} announced price: R${announced_price} +{difference}% {sticker}')
+                        print(f'\n{skin_name} \ncurrent price: R${skin_price_now} announced price: R${announced_price} +{difference}%')
         else:
             skin_info = skin_price(skin_name)
             try:
@@ -77,7 +93,7 @@ def handle_item(item, sticker, updated):
                 skin_price_now = float(skin_info['median_price'].replace('R$ ', '').replace(',', '.'))
             difference = compare_prices(skin_price_now, announced_price)
             if difference <= 40:
-                print(f'{skin_name} current price: R${skin_price_now} announced price: R${announced_price} +{difference}% {sticker}')
+                print(f'\n{skin_name} \ncurrent price: R${skin_price_now} announced price: R${announced_price} +{difference}%')
             if 'lowest_price' in skin_info.keys():
                 data_to_file = {
                     'skin_name':skin_name, 
@@ -137,6 +153,7 @@ def clear_file(date):
 def main():
     file_data = open_skin_prices()
     today_date = datetime.now().strftime('%d/%m')
+    count = 0
     if today_date == file_data['date']:
         price_update = True
         print('Updated price!')
@@ -145,13 +162,21 @@ def main():
         clear_file(today_date)
         print('Price not updated!')
     for sticker in stickers:
-        print(f'Searching {sticker}')
+        count += 1
+        print(50*'-')
+        print(f'({count}/{len(stickers)})Searching {sticker}')
         items = sticker_search(sticker)
         for item in items['results']:
             handle_item(item, sticker, updated=price_update)
+        print(50*'-')
     if price_update == False:
         update_date(today_date)
         print('All prices have been updated!')
+    print('Press any button to exit...')
+    input()
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except:
+        input()
